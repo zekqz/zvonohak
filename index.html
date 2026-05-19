@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Видеоконференция</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap');
+
+body {
+  margin: 0; padding: 0;
+  font-family: 'Inter', sans-serif;
+  background: #f0f4f8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  color: #333;
+}
+
+/* Вход */
+#auth-section {
+  margin-top: 100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#password-input {
+  padding: 15px 20px;
+  font-size: 1.2em;
+  border-radius: 10px;
+  border: 2px solid #ccc;
+  margin-bottom: 20px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+#password-input:focus {
+  border-color: #3478f6;
+}
+#enter-btn {
+  padding: 15px 30px;
+  font-size: 1.2em;
+  border-radius: 50px;
+  border: none;
+  background-color: #3478f6;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+#enter-btn:hover {
+  background-color: #2b65d9;
+}
+
+/* Основной интерфейс */
+#conference {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1500px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Заголовок */
+h1 {
+  margin-top: 20px;
+  font-size: 2em;
+}
+
+/* Видео и контейнер */
+#video-area {
+  display: flex;
+  width: 100%;
+  height: 70vh;
+  margin-top: 30px;
+  position: relative;
+  justify-content: flex-start;
+  overflow-x: auto;
+  padding: 10px;
+}
+
+/* Мои видео — справа, чужие — слева || все в линию */
+#my-video {
+  position: absolute;
+  right: 20px;
+}
+#peer-videos {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  height: 100%;
+}
+
+/* Видео элементов */
+video {
+  width: 300px;
+  height: 200px;
+  background: #000;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  object-fit: cover;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* Панель кнопок снизу, по центру */
+#controls {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+button {
+  padding: 12px 24px;
+  font-size: 1em;
+  border-radius: 50px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+  background-color: #ccc; /* по умолчанию — выключено */
+  color: #fff;
+}
+button.active {
+  background-color: #4CAF50; /* включено — зелёный */
+}
+button.inactive {
+  background-color: #f44336; /* выключено — красный */
+}
+</style>
+</head>
+<body>
+
+<div id="auth-section">
+  <h2>Введите пароль для входа</h2>
+  <input type="password" id="password-input" placeholder="Пароль" />
+  <button id="enter-btn">Войти</button>
+</div>
+
+<div id="conference">
+  <h1>Комната видеосвязи</h1>
+  <div id="video-area">
+    <div id="peer-videos"></div>
+    <video id="my-video" autoplay muted playsinline></video>
+  </div>
+  <div id="controls">
+    <button id="mic-btn" class="inactive"><span class="icon">🎤</span></button>
+    <button id="cam-btn" class="inactive"><span class="icon">📷</span></button>
+    <button id="screen-btn" class="inactive"><span class="icon">🖥️</span></button>
+    <button id="leave-btn" class="inactive"><span class="icon">🚪</span> Выйти</button>
+  </div>
+</div>
+
+<script>
+// Переменные
+const authSection = document.getElementById('auth-section');
+const conferenceSection = document.getElementById('conference');
+const passwordInput = document.getElementById('password-input');
+const enterBtn = document.getElementById('enter-btn');
+
+const correctPassword = '133221';
+
+const micBtn = document.getElementById('mic-btn');
+const camBtn = document.getElementById('cam-btn');
+const screenBtn = document.getElementById('screen-btn');
+const leaveBtn = document.getElementById('leave-btn');
+
+let localStream;
+let isMicOn = false;
+let isCamOn = false;
+let isScreenSharing = false;
+
+let peerConnections = {}; // Хранит пэры
+let peerVideos = {}; // Видео других участников
+
+const peerVideosContainer = document.getElementById('peer-videos');
+const myVideoElement = document.getElementById('my-video');
+
+let socket; // Тут предположим, есть соединение WebSocket или аналогичный сигнальный сервер
+
+// Вход
+enterBtn.onclick = () => {
+  if (passwordInput.value === correctPassword) {
+    authSection.style.display = 'none';
+    conferenceSection.style.display = 'flex';
+    initConference();
+  } else {
+    alert('Неверный пароль!');
+  }
+};
+
+async function initConference() {
+  await setupMedia();
+  setupWebSocket();
+}
+
+async function setupMedia() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    myVideoElement.srcObject = localStream;
+    // Изначально микрофон выключен
+    toggleMic(false);
+  } catch (err) {
+    alert('Ошибка доступа к медиаустройствам: ' + err.message);
+  }
+}
+
+function toggleMic(state) {
+  if (localStream) {
+    localStream.getAudioTracks().forEach(track => {
+      track.enabled = state;
+    });
+  }
+  // Обновляю состояние кнопки
+  if (state) {
+    micBtn.classList.add('active');
+    micBtn.classList.remove('inactive');
+  } else {
+    micBtn.classList.remove('active');
+    micBtn.classList.add('inactive');
+  }
+}
+
+function toggleCam(state) {
+  if (localStream) {
+    localStream.getVideoTracks().forEach(track => {
+      track.enabled = state;
+    });
+  }
+  if (state) {
+    camBtn.classList.add('active');
+    camBtn.classList.remove('inactive');
+  } else {
+    camBtn.classList.remove('active');
+    camBtn.classList.add('inactive');
+  }
+}
+
+setupMediaButtons();
+
+function setupMediaButtons() {
+  micBtn.onclick = () => {
+    isMicOn = !isMicOn;
+    toggleMic(isMicOn);
+  };
+  camBtn.onclick = () => {
+    isCamOn = !isCamOn;
+    toggleCam(isCamOn);
+  };
+  screenBtn.onclick = async () => {
+    if (!isScreenSharing) {
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        isScreenSharing = true;
+        replaceVideoTrack(screenStream.getVideoTracks()[0]);
+        setupScreenShareListeners(screenStream);
+        updateButtonState(screenBtn, true);
+      } catch (err) {
+        alert('Ошибка sharing экрана: ' + err.message);
+      }
+    } else {
+      stopScreenShare();
+    }
+  };
+  leaveBtn.onclick = () => {
+    // Закрываем соединения
+    for (let pc of Object.values(peerConnections)) {
+      pc.close();
+    }
+    peerConnections = {};
+    // Оставляем все треки
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+    }
+    location.reload();
+  };
+}
+
+// Замена видео при демонстрации
+function replaceVideoTrack(newTrack) {
+  for (let pc of Object.values(peerConnections)) {
+    const sender = pc.getSenders().find(s => s.track.kind === 'video');
+    if (sender) {
+      sender.replaceTrack(newTrack);
+    }
+  }
+}
+
+// Логика WebSocket и PeerConnection
+function setupWebSocket() {
+  // Предположим, есть сервер сигнализации, который сообщает о новых участниках
+  // Здесь просто псевдо-код для демонстрации
+  
+  // Инициируем соединение с сервером, присоединяемся к комнате...
+  
+  // На событие новой комнаты
+  // например:
+  // socket.on('new-participant', (participantId) => {
+  //   createOffer(participantId);
+  // });
+  // И так далее, логика обмена SDP и ICE
+  
+  // В этом примере эта часть не реализована, так как требует серверной части
+}
+
+// Условия для добавления видео нового участника
+function addPeer(id, stream) {
+  const videoElem = document.createElement('video');
+  videoElem.srcObject = stream;
+  videoElem.autoplay = true;
+  videoElem.playsInline = true;
+
+  // Нового участника добавим справа — в конец списка
+  peerVideosContainer.appendChild(videoElem);
+  peerVideos[id] = videoElem;
+}
+
+// Обработка полученных потоков и сигналов — должна быть реализована при использовании реального сервера
+</script>
+
+</body>
+</html>
