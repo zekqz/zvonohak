@@ -2,326 +2,265 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<title>Видеоконференция</title>
+<title>Видео-конференция</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap');
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f4f8;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-body {
-  margin: 0; padding: 0;
-  font-family: 'Inter', sans-serif;
-  background: #f0f4f8;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
-  color: #333;
-}
+  #video-container {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    height: 70vh;
+    overflow-x: auto;
+    padding: 10px;
+  }
 
-/* Вход */
-#auth-section {
-  margin-top: 100px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-#password-input {
-  padding: 15px 20px;
-  font-size: 1.2em;
-  border-radius: 10px;
-  border: 2px solid #ccc;
-  margin-bottom: 20px;
-  outline: none;
-  transition: border-color 0.3s;
-}
-#password-input:focus {
-  border-color: #3478f6;
-}
-#enter-btn {
-  padding: 15px 30px;
-  font-size: 1.2em;
-  border-radius: 50px;
-  border: none;
-  background-color: #3478f6;
-  color: #fff;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-#enter-btn:hover {
-  background-color: #2b65d9;
-}
+  #my-video {
+    width: 300px;
+    height: 200px;
+    background: black;
+    margin-right: 10px;
+    border-radius: 10px;
+  }
 
-/* Основной интерфейс */
-#conference {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 1500px;
-  padding: 20px;
-  box-sizing: border-box;
-}
+  #peer-videos {
+    display: flex;
+    gap: 10px;
+  }
 
-/* Заголовок */
-h1 {
-  margin-top: 20px;
-  font-size: 2em;
-}
+  video {
+    width: 300px;
+    height: 200px;
+    background: black;
+    border-radius: 10px;
+  }
 
-/* Видео и контейнер */
-#video-area {
-  display: flex;
-  width: 100%;
-  height: 70vh;
-  margin-top: 30px;
-  position: relative;
-  justify-content: flex-start;
-  overflow-x: auto;
-  padding: 10px;
-}
+  #buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+  }
 
-/* Мои видео — справа, чужие — слева || все в линию */
-#my-video {
-  position: absolute;
-  right: 20px;
-}
-#peer-videos {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  height: 100%;
-}
-
-/* Видео элементов */
-video {
-  width: 300px;
-  height: 200px;
-  background: #000;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  object-fit: cover;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-/* Панель кнопок снизу, по центру */
-#controls {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  width: 100%;
-  flex-wrap: wrap;
-}
-button {
-  padding: 12px 24px;
-  font-size: 1em;
-  border-radius: 50px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s;
-  background-color: #ccc; /* по умолчанию — выключено */
-  color: #fff;
-}
-button.active {
-  background-color: #4CAF50; /* включено — зелёный */
-}
-button.inactive {
-  background-color: #f44336; /* выключено — красный */
-}
+  button {
+    padding: 10px 20px;
+    font-size: 1em;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
 
-<div id="auth-section">
-  <h2>Введите пароль для входа</h2>
-  <input type="password" id="password-input" placeholder="Пароль" />
-  <button id="enter-btn">Войти</button>
-</div>
+<h2>Введите пароль для входа:</h2>
+<input type="password" id="password" placeholder="Пароль" />
+<button id="enter">Войти</button>
 
-<div id="conference">
-  <h1>Комната видеосвязи</h1>
-  <div id="video-area">
-    <div id="peer-videos"></div>
+<div id="content" style="display:none; width:100%; max-width:1500px; margin-top:20px;">
+  <h1>Видео конференция</h1>
+  <div id="video-container">
     <video id="my-video" autoplay muted playsinline></video>
+    <div id="peer-videos"></div>
   </div>
-  <div id="controls">
-    <button id="mic-btn" class="inactive"><span class="icon">🎤</span></button>
-    <button id="cam-btn" class="inactive"><span class="icon">📷</span></button>
-    <button id="screen-btn" class="inactive"><span class="icon">🖥️</span></button>
-    <button id="leave-btn" class="inactive"><span class="icon">🚪</span> Выйти</button>
+  <div id="buttons">
+    <button id="mute">🔇</button>
+    <button id="video">🎥</button>
+    <button id="leave">🚪 Выйти</button>
   </div>
 </div>
 
 <script>
-// Переменные
-const authSection = document.getElementById('auth-section');
-const conferenceSection = document.getElementById('conference');
-const passwordInput = document.getElementById('password-input');
-const enterBtn = document.getElementById('enter-btn');
+const passwordInput = document.getElementById('password');
+const enterBtn = document.getElementById('enter');
 
-const correctPassword = '133221';
+const contentDiv = document.getElementById('content');
+const myVideo = document.getElementById('my-video');
+const peerVideosDiv = document.getElementById('peer-videos');
 
-const micBtn = document.getElementById('mic-btn');
-const camBtn = document.getElementById('cam-btn');
-const screenBtn = document.getElementById('screen-btn');
-const leaveBtn = document.getElementById('leave-btn');
+const muteBtn = document.getElementById('mute');
+const videoBtn = document.getElementById('video');
+const leaveBtn = document.getElementById('leave');
 
+let peerConnections = {};
 let localStream;
-let isMicOn = false;
-let isCamOn = false;
-let isScreenSharing = false;
+let socket;
+let yourId = null;
 
-let peerConnections = {}; // Хранит пэры
-let peerVideos = {}; // Видео других участников
+const SIGNAL_SERVER_URL = 'ws://localhost:8080'; // Укажите свой адрес сервера
 
-const peerVideosContainer = document.getElementById('peer-videos');
-const myVideoElement = document.getElementById('my-video');
+const password = '133221'; // Ваш пароль
 
-let socket; // Тут предположим, есть соединение WebSocket или аналогичный сигнальный сервер
-
-// Вход
-enterBtn.onclick = () => {
-  if (passwordInput.value === correctPassword) {
-    authSection.style.display = 'none';
-    conferenceSection.style.display = 'flex';
-    initConference();
+// Проверка пароля
+document.getElementById('enter').onclick = () => {
+  if (passwordInput.value === password) {
+    document.getElementById('content').style.display = 'block';
+    document.getElementById('auth-section').style.display = 'none';
+    start();
   } else {
-    alert('Неверный пароль!');
+    alert('Неверный пароль');
   }
 };
 
-async function initConference() {
-  await setupMedia();
-  setupWebSocket();
+async function start() {
+  await getMedia();
+
+  socket = new WebSocket(SIGNAL_SERVER_URL);
+
+  socket.onopen = () => {
+    console.log('Подключено к серверу сигнализации');
+  };
+
+  socket.onmessage = async (event) => {
+    const message = JSON.parse(event.data);
+    const { from, type, sdp, candidate } = message;
+
+    if (from === yourId) return; // игнорируем свои сообщения
+
+    // Создаем или получаем соединение
+    if (type === 'offer') {
+      await handleOffer(from, sdp);
+    }
+    if (type === 'answer') {
+      await handleAnswer(from, sdp);
+    }
+    if (type === 'candidate') {
+      await handleCandidate(from, candidate);
+    }
+  };
+
+  // Получим свое id
+  socket.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    if (msg.type === 'id') {
+      yourId = msg.id;
+    }
+  };
+
+  // Отправляем сообщение о себе
+  function sendMessage(message) {
+    socket.send(JSON.stringify({ ...message, from: yourId }));
+  }
+
+  // Обмен инициализацией
+  // Для каждого нового участника — делаем offer
+  // Можно расширить — при входе всех участников
+
+  // В начале, после открытия сокета, отправим сообщение всем
+  socket.onopen = () => {
+    // Здесь можно отправлять "приветствие" всем
+    sendMessage({ type: 'join' });
+  }
 }
 
-async function setupMedia() {
+async function getMedia() {
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    myVideoElement.srcObject = localStream;
-    // Изначально микрофон выключен
-    toggleMic(false);
+    myVideo.srcObject = localStream;
   } catch (err) {
-    alert('Ошибка доступа к медиаустройствам: ' + err.message);
+    alert('Ошибка доступа к медиа: ' + err.message);
   }
 }
 
-function toggleMic(state) {
+async function handleOffer(from, sdp) {
+  const pc = createPeerConnection(from);
+  await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp }));
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  sendMessage({ type: 'answer', sdp: pc.localDescription.sdp, to: from });
+}
+
+async function handleAnswer(from, sdp) {
+  const pc = peerConnections[from];
+  if (pc) {
+    await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp }));
+  }
+}
+
+async function handleCandidate(from, candidate) {
+  const pc = peerConnections[from];
+  if (pc && candidate) {
+    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+  }
+}
+
+function createPeerConnection(peerId) {
+  const pc = new RTCPeerConnection({
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+  });
+
+  peerConnections[peerId] = pc;
+
+  // Добавим локальный поток
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+  // Обработка ICE
+  pc.onicecandidate = ({ candidate }) => {
+    if (candidate) {
+      sendMessage({ type: 'candidate', candidate, to: peerId });
+    }
+  };
+
+  // Обработка входящих потоков
+  pc.ontrack = ({ streams: [stream] }) => {
+    addPeerStream(peerId, stream);
+  };
+
+  // Создаём offer при необходимости
+  pc.onnegotiationneeded = async () => {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    sendMessage({ type: 'offer', sdp: pc.localDescription.sdp, to: peerId });
+  };
+
+  return pc;
+}
+
+function addPeerStream(peerId, stream) {
+  let videoElem = document.getElementById('peer-' + peerId);
+  if (!videoElem) {
+    videoElem = document.createElement('video');
+    videoElem.id = 'peer-' + peerId;
+    videoElem.autoplay = true;
+    videoElem.playsInline = true;
+    peerVideosDiv.appendChild(videoElem);
+  }
+  videoElem.srcObject = stream;
+}
+
+// Обработчики кнопок
+muteBtn.onclick = () => {
   if (localStream) {
     localStream.getAudioTracks().forEach(track => {
-      track.enabled = state;
+      track.enabled = !track.enabled;
     });
   }
-  // Обновляю состояние кнопки
-  if (state) {
-    micBtn.classList.add('active');
-    micBtn.classList.remove('inactive');
-  } else {
-    micBtn.classList.remove('active');
-    micBtn.classList.add('inactive');
-  }
-}
+};
 
-function toggleCam(state) {
+videoBtn.onclick = () => {
   if (localStream) {
     localStream.getVideoTracks().forEach(track => {
-      track.enabled = state;
+      track.enabled = !track.enabled;
     });
   }
-  if (state) {
-    camBtn.classList.add('active');
-    camBtn.classList.remove('inactive');
-  } else {
-    camBtn.classList.remove('active');
-    camBtn.classList.add('inactive');
+};
+
+leaveBtn.onclick = () => {
+  // закрыть соединение и остановить стрим
+  Object.values(peerConnections).forEach(pc => pc.close());
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
   }
-}
-
-setupMediaButtons();
-
-function setupMediaButtons() {
-  micBtn.onclick = () => {
-    isMicOn = !isMicOn;
-    toggleMic(isMicOn);
-  };
-  camBtn.onclick = () => {
-    isCamOn = !isCamOn;
-    toggleCam(isCamOn);
-  };
-  screenBtn.onclick = async () => {
-    if (!isScreenSharing) {
-      try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        isScreenSharing = true;
-        replaceVideoTrack(screenStream.getVideoTracks()[0]);
-        setupScreenShareListeners(screenStream);
-        updateButtonState(screenBtn, true);
-      } catch (err) {
-        alert('Ошибка sharing экрана: ' + err.message);
-      }
-    } else {
-      stopScreenShare();
-    }
-  };
-  leaveBtn.onclick = () => {
-    // Закрываем соединения
-    for (let pc of Object.values(peerConnections)) {
-      pc.close();
-    }
-    peerConnections = {};
-    // Оставляем все треки
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-    }
-    location.reload();
-  };
-}
-
-// Замена видео при демонстрации
-function replaceVideoTrack(newTrack) {
-  for (let pc of Object.values(peerConnections)) {
-    const sender = pc.getSenders().find(s => s.track.kind === 'video');
-    if (sender) {
-      sender.replaceTrack(newTrack);
-    }
-  }
-}
-
-// Логика WebSocket и PeerConnection
-function setupWebSocket() {
-  // Предположим, есть сервер сигнализации, который сообщает о новых участниках
-  // Здесь просто псевдо-код для демонстрации
-  
-  // Инициируем соединение с сервером, присоединяемся к комнате...
-  
-  // На событие новой комнаты
-  // например:
-  // socket.on('new-participant', (participantId) => {
-  //   createOffer(participantId);
-  // });
-  // И так далее, логика обмена SDP и ICE
-  
-  // В этом примере эта часть не реализована, так как требует серверной части
-}
-
-// Условия для добавления видео нового участника
-function addPeer(id, stream) {
-  const videoElem = document.createElement('video');
-  videoElem.srcObject = stream;
-  videoElem.autoplay = true;
-  videoElem.playsInline = true;
-
-  // Нового участника добавим справа — в конец списка
-  peerVideosContainer.appendChild(videoElem);
-  peerVideos[id] = videoElem;
-}
-
-// Обработка полученных потоков и сигналов — должна быть реализована при использовании реального сервера
+  socket.close();
+  alert('Вы вышли из конференции');
+  location.reload();
+};
 </script>
-
 </body>
 </html>
